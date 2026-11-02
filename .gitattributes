@@ -1,0 +1,5 @@
+# 上游仓库里部分文件以 CRLF 提交、部分以 LF 提交。
+# 一律按原样存取，禁止 git 自动转换行尾：
+# 否则在 core.autocrlf=true 的 Windows 上，CRLF 文件会被规范化成 LF，
+# 整个文件都显示为已修改，merge 时全是假冲突。
+* -text
