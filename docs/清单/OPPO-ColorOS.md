@@ -259,6 +259,25 @@ PMX110 / ColorOS 17 上逐个单独挂起实测（Issue #335，2026-10-30）。
 | 小布建议 | 设置 → OPPO AI → 小布建议 → 内容资讯 → 资讯服务（二级页），保留商圈服务 |
 | 广告包 / 快应用 | `com.opos.ads`、`com.heytap.pictorial` 挂起，3 个快应用组件关闭；挂起不等于进程一定退出 |
 
+### 一加 15T（PLZ110 / ColorOS 17.0.0.107(CN01) / Android 17）
+
+2026-11-02 真机走通，机型脚本 `recipes/oneplus-PLZ110/recipe.py`。此前 `check` 把这台指向同品牌参考脚本 `oppo-PLP120`（ColorOS 16.0.9），`--ref` 跑下来九段关了 0 个——一加被归在 `oppo` 家族里，而 `REFERENCE` 只有一份 ColorOS 16 的，入口几乎全对不上。现在参考脚本按系统大版本挑（见 `run.py` 的 `build_os_major`）。
+
+| 位置 | 差异与处理 |
+|---|---|
+| 系统·广告跟踪 | 设置首页叫「隐私与安全」（`PrivacySecuritySettingsDashboardActivity`，有 隐私/安全 两个 tab），不是「隐私」。`设备标识与广告` 在 `OplusSettingsActivity$DevicesIdentifySettingsActivity`，里面的「广告跟踪」是**跳转行**（`coui_preference_widget_jump`），不是开关。点进去是**逐应用列表**（本机 165 个应用），开关的 `text` 就是状态字「开启/关闭」，`checkable=true`；引擎的 `title_of` 已过滤状态字，`p.off(page="广告跟踪")` 核对 188 项、翻页到 40 屏上限内正常跑完（约 91 秒） |
+| 负一屏 | 右滑进速览**不稳定**：同一次实跑里进去过一次（设置页能看到「推荐服务」「热点资讯」），随后手动连滑多次都停在 `com.android.launcher/.Launcher`。`disable_assistant_screen=0`（没被禁）、包也装着，该包没有 LAUNCHER Activity，monkey 拉不起来。脚本按页面内容判断进没进，进不去就跳过。进去那次「推荐服务」里找不到参考脚本的「不显示轮播推荐」，选项名与本机不符，需人工核对 |
+| 下拉搜索 | 桌面下拉打开的是**通知栏**（焦点 `NotificationShade`）。`com.heytap.quicksearchbox` 没有 LAUNCHER Activity，`SearchSettingActivity` 未导出（`am start` 被拒），没有别的入口。`swipe_bottom_to_notification_enabled=0` 与实测行为相反，不能拿它判断。脚本打印原因后跳过 |
+| 软件商店 26.10.2 | **没有「服务管理」了**。隐私入口改名「隐私授权管理」（`客服→账号与隐私` 分组下），「个性化推荐」是跳转行，进去才是开关（本机默认已关）。「全部服务」只剩应用管家（应用卸载/我的预约/我的应用），已无推广开关。通知分类在「消息管理」，本机 7 类推送（含「热门内容推送」）默认全关。设置齿轮 `content-desc` 为「设置」 |
+| 浏览器 40.10.21 | `com.heytap.browser/.settings.component.BrowserPreferencesPage` 直达可用，首页默认已是「简洁」（没有「我的」和菜单）。隐私 → 广告管理：开屏广告、资讯列表广告可关；**摇一摇广告在两者关掉后 `enabled=false` 灰置**，不用点也不用报失败 |
+| 主题商店 17.12.0 | 启动直接落在「我的」页（未登录时是「登录账号」卡片）。设置齿轮 `text` 和 `content-desc` **都为空**，只能 `tap_icon(["服务管理","隐私"])` 按图标点。服务管理 → 消息与广告关开屏广告、消息通知；隐私里的「个性化推荐设置」本身就是开关，不进二级页 |
+| 视频 | `com.heytap.yoli` 只有本地播放器（`com.oplus.localvideo.ui.LocalVideosListActivity`，视频/文件夹两个 tab），没有「我的」和个性化入口；`MainTabActivity` 存在但拉不起来。全机没有别的在线视频 App。脚本检测不到「我的」就跳过 |
+| 游戏中心 | 首次进入有「要允许发送通知吗」（选不允许）、「未成年人模式」、「我的页面升级」三层弹窗，`p.dismiss()` 可清。设置是右上角图标，`content-desc` 读作「设置,有新通知」。关个性化推荐会弹「要关闭个性化推荐吗？」，确认按钮是**「继续关闭」**（已在 `CONFIRM` 里） |
+| 小布建议 | 「设置 → OPPO AI → 小布建议 → 内容资讯」入口能点开，但页内核对 0 个可关开关（本机服务项多为「已卸载」），等同无广告可关；脚本不会去点「开启」按钮 |
+| 广告包 / 快应用 | 经机主同意挂起 `com.opos.ads`、`com.heytap.pictorial`；`quickapp off` 关本地服务和卡片，保留 `com.nearme.instant.platform` |
+
+营销通知：`chan-scan` 出 25 条候选，剔除 4 条服务类（钉钉「内容通知」、负一屏「最新服务资讯通知」、Discord「语音和直播动态」与「活动通知」）后关 21 条，复查「仍开着 0 个」。
+
 ### 一加 Ace 2 Pro（PJA110 / ColorOS 14.0.0.812 / Android 14）
 
 2026-10-25 真机执行，完整范围见[一加旧系统实测](../10-一加旧系统实测.md)。以下为最新源码适配，尚未进入 0.2.3 安装包。

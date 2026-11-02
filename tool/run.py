@@ -198,6 +198,14 @@ REFERENCE = {"oppo": "oppo-PLP120", "honor": "honor-PNM-AN10", "xiaomi": "xiaomi
              "meizu": "meizu-MEIZU 21 Pro"}
 
 
+def build_os_major(s):
+    """BUILD / display.id 里的系统大版本号：PLZ110_17.0.0.107 → 17。
+    同一家族里 ColorOS 16 和 17 的设置入口差别很大（软件商店的「服务管理」在 17 上没了），
+    参考脚本要按大版本挑，不能只看品牌。"""
+    m = re.search(r"_(\d+)(?:[._]|$)", s or "")
+    return m.group(1) if m else ""
+
+
 def recipe_meta(path):
     with open(path, encoding="utf-8") as f:
         src = f.read()
@@ -222,6 +230,17 @@ def recipe_for(model, brand="", device_info=None):
                         return variant, False
             return r, False
     fam = FAMILY.get((brand or "").lower())
+    # 先找同家族、系统大版本对得上的脚本。REFERENCE 里一加并进 oppo，只有一份 ColorOS 16 的
+    # oppo-PLP120；一加 15T（ColorOS 17）照它跑，广告跟踪和软件商店的入口全对不上。
+    # 同版本优先，同等条件取步骤最多的那份，结果确定，不受社区新增机型影响。
+    if fam and device_info:
+        major = build_os_major(device_info.get("build", ""))
+        if major:
+            same = [r for r in allr
+                    if os.path.basename(os.path.dirname(r)).startswith(fam + "-")
+                    and build_os_major(recipe_meta(r)["build"]) == major]
+            if same:
+                return max(same, key=lambda r: (len(recipe_meta(r)["steps"]), r)), True
     preferred = os.path.join(ROOT, "recipes", REFERENCE.get(fam, ""), "recipe.py")
     if fam in REFERENCE and os.path.exists(preferred):
         return preferred, True
